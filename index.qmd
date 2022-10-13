@@ -1,0 +1,149 @@
+---
+title: "Housing affordability index for professors"
+format: html
+editor: visual
+---
+
+For this assignment, I continue my investigation of professor salaries. In particular, I investigate the relative 'impoverishment' of faculty as median home prices rise from 2018-2022, disproportionately to salary increases.
+
+Data on Q3 median home values for 2018-2022 was extracted from:
+
+[https://www.zillow.com/research/data/]{.underline}
+
+Data on 2022 salaries was extracted from:
+
+[https://www.ziprecruiter.com/Salaries/What-Is-the-Average-Professor-Salary-by-State]{.underline}
+
+For 2018-2021 salaries, average professor pay raise was extracted from:
+
+[https://www.aaup.org/sites/default/files/AAUP-2021-SurveyTables.pdf]{.underline}
+
+From the table, raises were:
+
+2022: 2%
+
+2021: 1%
+
+2020: 2.8%
+
+2019: 2%
+
+2018: 2.8%
+
+These were used to reduce 2022 pay to calculate 2018-2021 pay.
+
+### Data manipulation
+
+\>For each year a basic affordability index defined as home price to annual income ratio was calculated. This was inspired by
+
+[https://data.oecd.org/price/housing-prices.htm]{.underline}
+
+Basically, a home price of 240K relative to a salary of 80K would give an index of 3.
+
+\>A simple difference (change between 2022 and 2018) was also calculated. for example, a difference of 1 would indicate a home in 2022 would cost an extra yearly salary, as compared to 2018.
+
+\>A percentage increase in monthly expenditure on housing was also calculated. This is the percent change between 2018 and 2022 for mortgage/ monthly salary. Mortgage was a calculated as 2\*price/360, monthly salary as salary/12.
+
+### Table
+
+The table show the following:
+
+\>State, Median Salary, Home Prices for 2018 and 2022, the Affordability Index for 2022, and the Change in Affordability between 2018-2022.
+
+\>The long table is put in a scroll box
+
+\>The table is themed
+
+\>The headers are nested
+
+\>The rows are highlight-able
+
+\>The Change in Affordability is color-coded for a difference greater than 1 salary
+
+\>A tooltip over Change in Affordability shows the percentage increase in monthly expenditure 2018-2022
+
+\>A sparkline 'Trend' shows yearly Affordability Indices for 2018-2022 when hovered over
+
+Clearly, meager yearly raises - often the case in academia as raises are tied to promotions and less so performance - mean that the real earnings of university professors have decreased dramatically as housing costs increase!
+
+```{r}
+#| warning: false
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+library(sparkline)
+library(tidyr)
+library(dplyr)
+library(htmlwidgets)
+```
+
+-   
+
+```{r}
+table <- read.csv("statedatafortable.csv")
+colnames(table)[1] <- gsub('^...','',colnames(table)[1])
+```
+
+-   
+
+```{r}
+tidytable <- read.csv("statedataforsparkle.csv") %>%
+    gather(key ="Quarter", value ="Index", Q3_2018:Q3_2022)
+colnames(tidytable)[1] <- gsub('^...','',colnames(tidytable)[1])
+```
+
+-   
+
+```{r, results='hide'}
+table.kable <- as.data.frame(table)
+table.kable %>% add_column(Trend = NA)
+```
+
+-   
+
+```{r}
+for(s in table.kable$State){
+  # vector of data for figure for cases
+  trend <- tidytable %>%
+    filter(State==s) %>%
+    arrange(Quarter) %>%
+    pull(Index)
+  # add figure to data.frame
+  table.kable[which(table.kable$State==s),"Trend"] <- spk_chr(trend)
+}
+```
+
+-   
+
+```{r}
+table.kable$Difference.22.18 <- ifelse(
+  table.kable$Difference.22.18 > 1,
+  cell_spec(table.kable$Difference.22.18, color = "red", bold = T, 
+            tooltip=paste("Professors in", table$State, "pay",table$Percent, "% of their income more on housing in 2022")),
+  cell_spec(table.kable$Difference.22.18, 
+            tooltip=paste("Professors in", table$State, "pay",table$Percent, "% of their income more on housing in 2022"))
+)
+```
+
+-   
+
+```{r}
+sparkline(0)
+table.kable.full <- table.kable%>% 
+  select(State, Salary.2022, Home.Price.2018, Home.Price.2022, Index.2022, Difference.22.18, Trend) %>%
+  kbl(escape = FALSE,
+      col.names = c("State",
+                    "Median Salary",
+                    "2018",
+                    "2022",
+                    "2022",
+                    "Change, 2018-22", 
+                    "Trend"),
+  align = c("l","r","r","r","r","r","r"),
+      digits = 1, format.args = list(big.mark = ",")) %>%
+  add_header_above(c(" ", " ", "Median Home Price" = 2, "Affordability Index" = 2, " "))  %>%
+  kable_styling(font_size=15, fixed_thead = TRUE) %>%
+  scroll_box(width = "100%", height = "400px") %>%
+  kable_paper(lightable_options = "hover", full_width = FALSE)
+table.kable.full
+```
