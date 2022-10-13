@@ -64,8 +64,7 @@ The table show the following:
 
 \>A sparkline 'Trend' shows yearly Affordability Indices for 2018-2022 when hovered over
 
-Clearly, meager yearly raises - often the case in academia as raises are tied to promotions and less so performance - mean that the real earnings of university professors have decreased dramatically as housing costs increase.
-
+Clearly, meager yearly raises - often the case in academia as raises are tied to promotions and less so performance - mean that the real earnings of university professors have decreased dramatically as housing costs increase!
 
 ```{r}
 #| warning: false
